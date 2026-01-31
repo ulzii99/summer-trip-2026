@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Summer 2026 Western US Adventure</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            --terracotta: #C2724F;
+            --canyon-red: #A8432D;
+            --sage: #7A8B6F;
+            --sand: #E8DCC4;
+            --cream: #FAF7F2;
+            --midnight: #1E2328;
+            --slate: #4A5568;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Source Sans 3', sans-serif;
+            background: var(--cream);
+            color: var(--midnight);
+            line-height: 1.6;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--canyon-red) 0%, var(--terracotta) 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 80 Q25 60 50 75 T100 65 V100 H0Z' fill='%23ffffff10'/%3E%3C/svg%3E") bottom/cover no-repeat;
+        }
+        
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            position: relative;
+            letter-spacing: 2px;
+        }
+        
+        .subtitle {
+            font-weight: 300;
+            font-size: 1.3rem;
+            opacity: 0.9;
+            position: relative;
+        }
+        
+        .date-range {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            margin-top: 15px;
+            position: relative;
+            letter-spacing: 1px;
+        }
+        
+        .trip-stats {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            margin-top: 30px;
+            position: relative;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        #map {
+            height: 500px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            margin-bottom: 50px;
+        }
+        
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            color: var(--canyon-red);
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid var(--sand);
+        }
+        
+        .itinerary {
+            display: grid;
+            gap: 25px;
+        }
+        
+        .day-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .day-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+        }
+        
+        .day-image {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .day-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            min-height: 200px;
+        }
+        
+        .day-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: linear-gradient(135deg, var(--canyon-red) 0%, var(--terracotta) 100%);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .day-badge .day-num {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        
+        .day-badge .day-date {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+        }
+        
+        .day-content {
+            padding: 25px 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .day-location {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: var(--midnight);
+            margin-bottom: 10px;
+        }
+        
+        .day-activities {
+            color: var(--slate);
+            margin-bottom: 15px;
+            line-height: 1.7;
+        }
+        
+        .day-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: auto;
+        }
+        
+        .meta-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--sand);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--slate);
+        }
+        
+        .meta-tag.walk {
+            background: #E8F5E9;
+            color: #2E7D32;
+        }
+        
+        .meta-tag.drive {
+            background: #FFF3E0;
+            color: #E65100;
+        }
+        
+        .lodging-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+        
+        .lodging-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        .lodging-image {
+            height: 180px;
+            overflow: hidden;
+        }
+        
+        .lodging-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        .lodging-card:hover .lodging-image img {
+            transform: scale(1.05);
+        }
+        
+        .lodging-content {
+            padding: 25px;
+        }
+        
+        .lodging-card h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            color: var(--canyon-red);
+            margin-bottom: 5px;
+        }
+        
+        .lodging-dates {
+            font-size: 0.9rem;
+            color: var(--sage);
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--sand);
+        }
+        
+        .hotel-option {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed var(--sand);
+        }
+        
+        .hotel-option:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .hotel-name {
+            font-weight: 600;
+            color: var(--midnight);
+        }
+        
+        .hotel-price {
+            color: var(--sage);
+            font-weight: 600;
+        }
+        
+        .hotel-features {
+            font-size: 0.9rem;
+            color: var(--slate);
+            margin-top: 5px;
+        }
+        
+        .top-pick {
+            background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
+            border: 2px solid #FFD54F;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .top-pick .hotel-name::before {
+            content: '⭐ ';
+        }
+        
+        .budget-table {
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        .budget-table th,
+        .budget-table td {
+            padding: 18px 25px;
+            text-align: left;
+        }
+        
+        .budget-table th {
+            background: var(--midnight);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.85rem;
+        }
+        
+        .budget-table tr:nth-child(even) {
+            background: var(--sand);
+        }
+        
+        .budget-table tr:last-child {
+            background: var(--terracotta);
+            color: white;
+            font-weight: 700;
+        }
+        
+        .budget-table tr:last-child td {
+            font-size: 1.1rem;
+        }
+        
+        .packing-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+        
+        .packing-category {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        .packing-category h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--canyon-red);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .packing-category ul {
+            list-style: none;
+        }
+        
+        .packing-category li {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--sand);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .packing-category li:last-child {
+            border-bottom: none;
+        }
+        
+        .packing-category li::before {
+            content: '☐';
+            color: var(--sage);
+        }
+        
+        .tips-box {
+            background: linear-gradient(135deg, var(--sage) 0%, #5a6b50 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 35px;
+            margin-top: 40px;
+        }
+        
+        .tips-box h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .tips-box ul {
+            list-style: none;
+        }
+        
+        .tips-box li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        
+        .tips-box li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--sand);
+        }
+        
+        .reservations-box {
+            background: white;
+            border-left: 5px solid var(--canyon-red);
+            padding: 25px 30px;
+            border-radius: 0 16px 16px 0;
+            margin-top: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        .reservations-box h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--canyon-red);
+            margin-bottom: 15px;
+        }
+        
+        .reservation-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--sand);
+        }
+        
+        .reservation-item:last-child {
+            border-bottom: none;
+        }
+        
+        .total-stats {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-top: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            text-align: center;
+        }
+        
+        .total-stat {
+            padding: 15px;
+        }
+        
+        .total-stat-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            color: var(--canyon-red);
+            font-weight: 700;
+        }
+        
+        .total-stat-label {
+            font-size: 0.85rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        footer {
+            background: var(--midnight);
+            color: white;
+            text-align: center;
+            padding: 40px;
+            margin-top: 60px;
+        }
+        
+        footer p {
+            opacity: 0.7;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .trip-stats {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .day-card {
+                grid-template-columns: 1fr;
+            }
+            
+            .day-image {
+                height: 200px;
+            }
+            
+            .lodging-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Summer 2026</h1>
+        <p class="subtitle">Western United States Family Adventure</p>
+        <p class="date-range">June 13 – June 26, 2026</p>
+        <div class="trip-stats">
+            <div class="stat">
+                <div class="stat-value">14</div>
+                <div class="stat-label">Days</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">1,200</div>
+                <div class="stat-label">Miles</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">8</div>
+                <div class="stat-label">Destinations</div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <h2 class="section-title">🗺️ Route Map</h2>
+        <div id="map"></div>
+        
+        <h2 class="section-title">📅 Day-by-Day Itinerary</h2>
+        <div class="itinerary">
+            <!-- Day 1 -->
+            <div class="day-card">
+                <div class="day-image">
+                    <img src="https://images.unsplash.com/photo-1581351721010-8cf859cb14a4?w=600&h=400&fit=crop" alt="Las Vegas Strip">
+                    <div class="day-badge">
+                        <div class="day-num">1</div>
+                        <div class="day-date">Sat, Jun 13</div>
+                    </div>
+                </div>
+                <div class="day-content">
+                    <div class="day-location">Las Vegas, Nevada</div>
+                    <div class="day-activities">
+                        Arrive at Harry Reid International Airport, pick up rental car (book midsize SUV). Check into hotel, relax by the pool. Evening: explore Fremont Street Experience with its LED canopy light shows - great for kids!
+                    </div>
+                    <div class="day-meta">
+                        <span class="meta-tag walk">🚶 ~1.5 miles walking</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day 2 -->
+            <div class="day-card">
+                <div class="day-image">
+                    <img src="https://images.unsplash.com/photo-1474044159687-1ee9f3a51722?w=600&h=400&fit=crop" alt="Zion National Park">
+                    <div class="day-badge">
+                        <div class="day-num">2</div>
+                        <div class="day-date">Sun, Jun 14</div>
+                    </div>
+                </div>
+                <div class="day-content">
+                    <div class="day-location">Zion National Park</div>
+                    <div class="day-activities">
+                        Morning drive through scenic desert to Springdale. Check into hotel, then take the park shuttle for an orientation ride through Zion Canyon. Stop at a few viewpoints, pick up Junior Ranger booklet at Visitor Center.
+                    </div>
+                    <div class="day-meta">
+                        <span class="meta-tag drive">🚗 2.5 hrs from Las Vegas (160 mi)</span>
+                        <span class="meta-tag walk">🚶 ~2 miles walking</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day 3 -->
+            <div class="day-card">
+                <div class="day-image">
+                    <img src="https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=600&h=400&fit=crop" alt="Zion Riverside Walk">
+                    <div class="day-badge">
+                        <div class="day-num">3</div>
+                        <div class="day-date">Mon, Jun 15</div>
+                    </div>
+                </div>
+                <div class="day-content">
+                    <div class="day-location">Zion National Park (Full Day)</div>
+                    <div class="day-activities">
+                        Start early! Riverside Walk (2.2 mi round trip, paved, kid-friendly) - wade into the Virgin River at the end. Afternoon: Lower Emerald Pools Trail (1.2 mi). Complete Junior Ranger program. Pool time at hotel to cool off.
+                    </div>
+                    <div class="day-meta">
+                        <span class="meta-tag walk">🚶 ~5 miles walking</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day 4 -->
+            <div class="day-card">
+                <div class="day-image">
+                    <img src="https://images.unsplash.com/photo-1473625247510-8ceb1760943f?w=600&h=400&fit=crop" alt="Bryce Canyon Hoodoos">
+                    <div class="day-badge">
+                        <div class="day-num">4</div>
+                        <div class="day-date">Tue, Jun 16</div>
+                    </div>
+                </div>
+                <div class="day-content">
+                    <div class="day-location">Bryce Canyon National Park</div>
+                    <div class="day-activities">
+                        Drive scenic Highway 89 through red rock country. Explore Bryce's otherworldly hoodoos. Walk the Rim Trail between Sunrise and Sunset Points. Queen's Garden Trail (1.8 mi) descends among the formations. Sunset viewing.
+                    </div>
+                    <div class="day-meta">
+                        <span class="meta-tag drive">🚗 1.5 hrs from Zion (85 mi)</span>
+                        <span class="meta-tag walk">🚶 ~4 miles walking</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day 5 -->
+            <div class="day-card">
+                <div class="day-image">
+                    <img src="https://images.unsplash.com/photo-1474044159687-1ee9f3a51722?w=600&h=400&fit=crop" alt="Grand Canyon South Rim">
+                    <div class="day-badge">
+                        <div class="day-num">5</div>
+                        <div class="day-date">Wed, Jun 17</div>
+                    </div>
+                </div>
+                <div class="day-content">
+                    <div class="day-location">Grand Canyon National Park</div>
+                    <div class="day-activities">
+                        Longer drive day through Arizona. Arrive at South Rim mid-afternoon. Check into Tusayan hotel. Head to Mather Point for first canyon views - absolutely breathtaking! Watch sunset from Yavapai Point. Start Junior Ranger booklet.
+                    </div>
+                    <div class="day-meta">
+                        <span class="meta-tag drive">🚗 4 hrs from Bryce (280 mi)</span>
+                        <span class="meta-tag walk">🚶 ~2.5 miles walking</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day 6 -->
+            <div class="day-card">
+                <div class="day-image">
+                    <img src="https://images.unsplash.com/photo-1615551043360-33de8b5f410c?w=600&h=400&fit=crop" alt="Grand Canyon Trail">
+                    <div class="day-badge">
+                        <div class="day-num">6</div>
+                        <div class="day-date">Thu, Jun 18</div>
+                    </div>
+                </div>
+                <div class="day-content">
+                    <div class="day-location">Grand Canyon National Park (Full Day)</div>
+                    <div class="day-activities">
+                        Early morning start (beat the heat). Walk Rim Trail sections, venture slightly down Bright Angel Trail (turn around after 1 mile). Afternoon: IMAX theater in Tusayan (air-conditioned break!). Optional: helicopter tour. Complete Junior Ranger badge.
+                    </div>
+                    <div class="day-meta">
+                        <span class="meta-tag walk">🚶 ~5 miles walking</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day 7 -->
+            <div class="day-card">
+                <div class="day-image">
+                    <img src="https://images.unsplash.com/photo-1558216561-3372cb15dc53?w=600&h=400&fit=crop" alt="Monument Valley">
+                    <div class="day-badge">
+                        <div class="day-num">7</div>
+                        <div class="day-date">Fri, Jun 19</div>
+                    </div>
+                </div>
+                <div class="day-content">
+                    <div class="day-location">Monument Valley Navajo Tribal Park</div>
+                    <div class="day-activities">
+                        Drive through stunning Navajo Nation landscape. Check into The View Hotel (book early!). Take a guided Navajo tour of the valley floor - see iconic mittens, totem poles, and John Ford Point. Watch sunset from your room's balcony.
+                    </div>
+                    <div class="day-meta">
+                        <span class="meta-tag drive">🚗 3 hrs from Grand Canyon (180 mi)</span>
+                        <span class="meta-tag walk">🚶 ~2 miles walking</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day 8 -->
+            <div class="day-card">
+                <div class="day-image">
+                    <img src="https://images.unsplash.com/photo-1505852679233-d9fd70aff56d?w=600&h=400&fit=crop" alt="Arches National Park">
+                    <div class="day-badge">
+                        <div class="day-num">8</div>
+                        <div class="day-date">Sat, Jun 20</div>
+                    </div>
+                </div>
+                <div class="day-content">
+                    <div class="day-location">Moab / Arches National Park</div>
+                    <div class="day-activities">
+                        Morning Monument Valley sunrise (optional), then drive to Moab. Afternoon at Arches: Windows Section loop (1 mi, easy), Balanced Rock. Evening: Delicate Arch hike for sunset (3 mi RT, challenging but iconic - bring headlamps for return).
+                    </div>
+                    <div class="day-meta">
+                        <span class="meta-tag drive">🚗 2.5 hrs from Monument Valley (150 mi)</span>
+                        <span class="meta-tag walk">🚶 ~5 miles walking</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day 9 -->
+            <div class="day-card">
+                <div class="day-image">
+                    <img src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&h=400&fit=crop" alt="Canyonlands">
+                    <div class="day-badge">
+                        <div class="day-num">9</div>
+                        <div class="day-date">Sun, Jun 21</div>
+                    </div>
+                </div>
+                <div class="day-content">
+                    <div class="day-location">Moab / Canyonlands National Park</div>
+                    <div class="day-activities">
+                        Morning: Canyonlands Island in the Sky district. Mesa Arch sunrise hike (0.5 mi), Grand View Point. Return to Moab by lunch for pool time and exploring downtown shops. Relaxed afternoon - recharge for Colorado tomorrow.
+                    </div>
+                    <div class="day-meta">
+                        <span class="meta-tag walk">🚶 ~3 miles walking</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day 10 -->
+            <div class="day-card">
+                <div class="day-image">
+                    <img src="https://images.unsplash.com/photo-1580477667995-2b94f01c9516?w=600&h=400&fit=crop" alt="Aspen Colorado">
+                    <div class="day-badge">
+                        <div class="day-num">10</div>
+                        <div class="day-date">Mon, Jun 22</div>
+                    </div>
+                </div>
+                <div class="day-content">
+                    <div class="day-location">Aspen, Colorado</div>
+                    <div class="day-activities">
+                        Scenic drive through Colorado mountains via I-70 (beautiful!). Arrive in Aspen mid-afternoon. Evening stroll through charming downtown - window shop, grab dinner. Take it easy - you're at 8,000 ft elevation now!
+                    </div>
+                    <div class="day-meta">
+                        <span class="meta-tag drive">🚗 4.5 hrs from Moab (200 mi)</span>
+                        <span class="meta-tag walk">🚶 ~1.5 miles walking</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day 11 -->
+            <div class="day-card">
+                <div class="day-image">
+                    <img src="https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=600&h=400&fit=crop" alt="Aspen Gondola">
+                    <div class="day-badge">
+                        <div class="day-num">11</div>
+                        <div class="day-date">Tue, Jun 23</div>
+                    </div>
+                </div>
+                <div class="day-content">
+                    <div class="day-location">Aspen, Colorado (Full Day)</div>
+                    <div class="day-activities">
+                        Take Silver Queen Gondola to top of Aspen Mountain - incredible views! Hike around the summit area. Afternoon: drive to Maroon Bells (shuttle may be required) for easy lakeside walks. Evening: explore more of downtown, ice cream treat.
+                    </div>
+                    <div class="day-meta">
+                        <span class="meta-tag walk">🚶 ~4 miles walking</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day 12 -->
+            <div class="day-card">
+                <div class="day-image">
+                    <img src="https://images.unsplash.com/photo-1494500764479-0c8f2919a3d8?w=600&h=400&fit=crop" alt="Estes Park">
+                    <div class="day-badge">
+                        <div class="day-num">12</div>
+                        <div class="day-date">Wed, Jun 24</div>
+                    </div>
+                </div>
+                <div class="day-content">
+                    <div class="day-location">Estes Park, Colorado</div>
+                    <div class="day-activities">
+                        Beautiful drive through Colorado Rockies via Glenwood Springs and Vail. Arrive in Estes Park late afternoon. Explore charming downtown - taffy shops, toy stores, the famous Stanley Hotel (from The Shining!). Elk often seen in town at dusk.
+                    </div>
+                    <div class="day-meta">
+                        <span class="meta-tag drive">🚗 4 hrs from Aspen (180 mi)</span>
+                        <span class="meta-tag walk">🚶 ~2 miles walking</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day 13 -->
+            <div class="day-card">
+                <div class="day-image">
+                    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=400&fit=crop" alt="Rocky Mountain National Park">
+                    <div class="day-badge">
+                        <div class="day-num">13</div>
+                        <div class="day-date">Thu, Jun 25</div>
+                    </div>
+                </div>
+                <div class="day-content">
+                    <div class="day-location">Rocky Mountain National Park (Full Day)</div>
+                    <div class="day-activities">
+                        Epic day! Drive Trail Ridge Road - highest continuous paved road in US (12,183 ft). Stop at Alpine Visitor Center. Bear Lake area hikes: Nymph Lake (1.1 mi RT), Dream Lake (2.2 mi RT). Watch for elk, marmots, pikas. Complete final Junior Ranger badge!
+                    </div>
+                    <div class="day-meta">
+                        <span class="meta-tag walk">🚶 ~5 miles walking</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day 14 -->
+            <div class="day-card">
+                <div class="day-image">
+                    <img src="https://images.unsplash.com/photo-1515511624901-27b9c8b8aef0?w=600&h=400&fit=crop" alt="Denver Airport">
+                    <div class="day-badge">
+                        <div class="day-num">14</div>
+                        <div class="day-date">Fri, Jun 26</div>
+                    </div>
+                </div>
+                <div class="day-content">
+                    <div class="day-location">Denver → Home</div>
+                    <div class="day-activities">
+                        Sleep in a bit! Leisurely breakfast in Estes Park. Drive to Denver International Airport (unique tent-like architecture). Return rental car, fly home with amazing memories and Junior Ranger badges!
+                    </div>
+                    <div class="day-meta">
+                        <span class="meta-tag drive">🚗 1.5 hrs to Denver Airport (70 mi)</span>
+                        <span class="meta-tag walk">🚶 ~1 mile walking</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="total-stats">
+            <div class="total-stat">
+                <div class="total-stat-value">~38</div>
+                <div class="total-stat-label">Total Miles Walking</div>
+            </div>
+            <div class="total-stat">
+                <div class="total-stat-value">1,200</div>
+                <div class="total-stat-label">Miles Driving</div>
+            </div>
+            <div class="total-stat">
+                <div class="total-stat-value">6</div>
+                <div class="total-stat-label">National Parks</div>
+            </div>
+            <div class="total-stat">
+                <div class="total-stat-value">4</div>
+                <div class="total-stat-label">States</div>
+            </div>
+        </div>
+        
+        <h2 class="section-title" style="margin-top: 60px;">🏨 Recommended Lodging</h2>
+        <div class="lodging-grid">
+            <div class="lodging-card">
+                <div class="lodging-image">
+                    <img src="https://images.unsplash.com/photo-1581351721010-8cf859cb14a4?w=600&h=300&fit=crop" alt="Las Vegas">
+                </div>
+                <div class="lodging-content">
+                    <h3>Las Vegas</h3>
+                    <div class="lodging-dates">📅 Sat, June 13 (1 night)</div>
+                    <div class="hotel-option">
+                        <div class="hotel-name">Excalibur Hotel & Casino</div>
+                        <div class="hotel-price">$80-150/night</div>
+                        <div class="hotel-features">Family-friendly, pool, close to strip, medieval theme kids love</div>
+                    </div>
+                    <div class="hotel-option">
+                        <div class="hotel-name">Circus Circus</div>
+                        <div class="hotel-price">$60-120/night</div>
+                        <div class="hotel-features">Adventuredome indoor theme park, very affordable</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="lodging-card">
+                <div class="lodging-image">
+                    <img src="https://images.unsplash.com/photo-1474044159687-1ee9f3a51722?w=600&h=300&fit=crop" alt="Zion National Park">
+                </div>
+                <div class="lodging-content">
+                    <h3>Zion / Springdale</h3>
+                    <div class="lodging-dates">📅 Sun-Mon, June 14-15 (2 nights)</div>
+                    <div class="top-pick">
+                        <div class="hotel-name">SpringHill Suites Springdale</div>
+                        <div class="hotel-price">$200-300/night</div>
+                        <div class="hotel-features">Pool, splash pad, breakfast, family suites, near shuttle stop</div>
+                    </div>
+                    <div class="hotel-option">
+                        <div class="hotel-name">Cliffrose Springdale by Hilton</div>
+                        <div class="hotel-price">$250-400/night</div>
+                        <div class="hotel-features">Riverfront, heated pool, sandbox for kids, stunning views</div>
+                    </div>
+                    <div class="hotel-option">
+                        <div class="hotel-name">La Quinta Inn Springdale</div>
+                        <div class="hotel-price">$150-220/night</div>
+                        <div class="hotel-features">Great value, pool, hot tub, breakfast, amazing red rock views</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="lodging-card">
+                <div class="lodging-image">
+                    <img src="https://images.unsplash.com/photo-1473625247510-8ceb1760943f?w=600&h=300&fit=crop" alt="Bryce Canyon">
+                </div>
+                <div class="lodging-content">
+                    <h3>Bryce Canyon Area</h3>
+                    <div class="lodging-dates">📅 Tue, June 16 (1 night)</div>
+                    <div class="hotel-option">
+                        <div class="hotel-name">Best Western Plus Bryce Canyon</div>
+                        <div class="hotel-price">$150-250/night</div>
+                        <div class="hotel-features">Indoor pool, hot breakfast, close to park entrance</div>
+                    </div>
+                    <div class="hotel-option">
+                        <div class="hotel-name">Bryce Canyon Grand Hotel</div>
+                        <div class="hotel-price">$180-280/night</div>
+                        <div class="hotel-features">Indoor/outdoor pool, hot tub, modern rooms, shuttle to park</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="lodging-card">
+                <div class="lodging-image">
+                    <img src="https://images.unsplash.com/photo-1615551043360-33de8b5f410c?w=600&h=300&fit=crop" alt="Grand Canyon">
+                </div>
+                <div class="lodging-content">
+                    <h3>Grand Canyon / Tusayan</h3>
+                    <div class="lodging-dates">📅 Wed-Thu, June 17-18 (2 nights)</div>
+                    <div class="top-pick">
+                        <div class="hotel-name">The Squire at Grand Canyon (Holiday Inn Resort)</div>
+                        <div class="hotel-price">$200-350/night</div>
+                        <div class="hotel-features">Resort amenities: bowling, arcade, pools, multiple restaurants, fire pits</div>
+                    </div>
+                    <div class="hotel-option">
+                        <div class="hotel-name">Grand Canyon Plaza Hotel</div>
+                        <div class="hotel-price">$180-280/night</div>
+                        <div class="hotel-features">Indoor pool, excellent breakfast buffet, 1 mile from park entrance</div>
+                    </div>
+                    <div class="hotel-option">
+                        <div class="hotel-name">The Grand Hotel at Grand Canyon</div>
+                        <div class="hotel-price">$200-300/night</div>
+                        <div class="hotel-features">Indoor pool, fitness center, AAA 3-Diamond, Canyon Star restaurant</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="lodging-card">
+                <div class="lodging-image">
+                    <img src="https://images.unsplash.com/photo-1558216561-3372cb15dc53?w=600&h=300&fit=crop" alt="Monument Valley">
+                </div>
+                <div class="lodging-content">
+                    <h3>Monument Valley</h3>
+                    <div class="lodging-dates">📅 Fri, June 19 (1 night)</div>
+                    <div class="top-pick">
+                        <div class="hotel-name">The View Hotel</div>
+                        <div class="hotel-price">$250-400/night</div>
+                        <div class="hotel-features">⚠️ BOOK NOW! Only hotel inside park, iconic mitten views from every room balcony</div>
+                    </div>
+                    <div class="hotel-option">
+                        <div class="hotel-name">Goulding's Lodge</div>
+                        <div class="hotel-price">$180-280/night</div>
+                        <div class="hotel-features">Historic lodge, pool, museum, guided tours available on-site</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="lodging-card">
+                <div class="lodging-image">
+                    <img src="https://images.unsplash.com/photo-1505852679233-d9fd70aff56d?w=600&h=300&fit=crop" alt="Arches">
+                </div>
+                <div class="lodging-content">
+                    <h3>Moab / Arches</h3>
+                    <div class="lodging-dates">📅 Sat-Sun, June 20-21 (2 nights)</div>
+                    <div class="top-pick">
+                        <div class="hotel-name">SpringHill Suites Moab</div>
+                        <div class="hotel-price">$200-350/night</div>
+                        <div class="hotel-features">Closest to Arches entrance, 2 pools, hot tubs, splash pad, breakfast included</div>
+                    </div>
+                    <div class="hotel-option">
+                        <div class="hotel-name">Hyatt Place Moab</div>
+                        <div class="hotel-price">$180-300/night</div>
+                        <div class="hotel-features">Modern rooms, pool, breakfast included, great downtown location</div>
+                    </div>
+                    <div class="hotel-option">
+                        <div class="hotel-name">Aarchway Inn</div>
+                        <div class="hotel-price">$150-250/night</div>
+                        <div class="hotel-features">Family-friendly, complimentary breakfast, pool, free town shuttle</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="lodging-card">
+                <div class="lodging-image">
+                    <img src="https://images.unsplash.com/photo-1580477667995-2b94f01c9516?w=600&h=300&fit=crop" alt="Aspen">
+                </div>
+                <div class="lodging-content">
+                    <h3>Aspen, Colorado</h3>
+                    <div class="lodging-dates">📅 Mon-Tue, June 22-23 (2 nights)</div>
+                    <div class="top-pick">
+                        <div class="hotel-name">Aspen Meadows Resort</div>
+                        <div class="hotel-price">$300-450/night</div>
+                        <div class="hotel-features">40-acre property, all-suite rooms, pool, kids eat free, free shuttle to downtown</div>
+                    </div>
+                    <div class="hotel-option">
+                        <div class="hotel-name">The Gant</div>
+                        <div class="hotel-price">$350-500/night</div>
+                        <div class="hotel-features">Full kitchens, multiple pools, tennis courts, near gondola</div>
+                    </div>
+                    <div class="hotel-option">
+                        <div class="hotel-name">St. Moritz Lodge</div>
+                        <div class="hotel-price">$200-350/night</div>
+                        <div class="hotel-features">Budget-friendly for Aspen, pool, hot tub, kitchenettes, downtown location</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="lodging-card">
+                <div class="lodging-image">
+                    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop" alt="Rocky Mountain">
+                </div>
+                <div class="lodging-content">
+                    <h3>Estes Park / Rocky Mountain</h3>
+                    <div class="lodging-dates">📅 Wed-Thu, June 24-25 (2 nights)</div>
+                    <div class="top-pick">
+                        <div class="hotel-name">YMCA of the Rockies</div>
+                        <div class="hotel-price">$150-250/night</div>
+                        <div class="hotel-features">860 acres! Kids club, cabins, activities galore, borders Rocky Mountain NP</div>
+                    </div>
+                    <div class="hotel-option">
+                        <div class="hotel-name">Murphy's Resort</div>
+                        <div class="hotel-price">$150-250/night</div>
+                        <div class="hotel-features">Riverfront, heated pool, hot tub, DVD rentals, continental breakfast</div>
+                    </div>
+                    <div class="hotel-option">
+                        <div class="hotel-name">Hotel Estes</div>
+                        <div class="hotel-price">$120-200/night</div>
+                        <div class="hotel-features">Family-owned, mountain views, breakfast, nightly s'mores, near downtown</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <h2 class="section-title" style="margin-top: 60px;">💰 Budget Estimate (3 People, 14 Days)</h2>
+        <table class="budget-table">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Low Estimate</th>
+                    <th>High Estimate</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Flights (IAD/DCA)</td>
+                    <td>$1,200</td>
+                    <td>$1,800</td>
+                    <td>Vegas in (6/13) + Denver out (6/26), 3 people</td>
+                </tr>
+                <tr>
+                    <td>Car Rental (14 days)</td>
+                    <td>$1,200</td>
+                    <td>$1,800</td>
+                    <td>Midsize SUV + one-way drop fee</td>
+                </tr>
+                <tr>
+                    <td>Gas</td>
+                    <td>$200</td>
+                    <td>$300</td>
+                    <td>~1,200 miles driving</td>
+                </tr>
+                <tr>
+                    <td>Lodging (13 nights)</td>
+                    <td>$2,000</td>
+                    <td>$3,500</td>
+                    <td>Mix of hotels per recommendations</td>
+                </tr>
+                <tr>
+                    <td>Park Passes</td>
+                    <td>$80</td>
+                    <td>$80</td>
+                    <td>America the Beautiful Annual Pass</td>
+                </tr>
+                <tr>
+                    <td>Food</td>
+                    <td>$1,000</td>
+                    <td>$1,600</td>
+                    <td>Groceries + restaurants</td>
+                </tr>
+                <tr>
+                    <td>Activities</td>
+                    <td>$300</td>
+                    <td>$600</td>
+                    <td>Tours, gondola, Monument Valley tour</td>
+                </tr>
+                <tr>
+                    <td>Miscellaneous</td>
+                    <td>$200</td>
+                    <td>$400</td>
+                    <td>Tips, souvenirs, emergencies</td>
+                </tr>
+                <tr>
+                    <td><strong>TOTAL</strong></td>
+                    <td><strong>$6,200</strong></td>
+                    <td><strong>$10,000</strong></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="reservations-box">
+            <h3>⚠️ Advance Reservations Required</h3>
+            <div class="reservation-item">
+                <span><strong>The View Hotel (Monument Valley)</strong> - June 19</span>
+                <span>Book NOW (6+ months ahead)</span>
+            </div>
+            <div class="reservation-item">
+                <span><strong>Arches Timed Entry</strong> - June 20</span>
+                <span>March 20, 2026 (3 months ahead)</span>
+            </div>
+            <div class="reservation-item">
+                <span><strong>Rocky Mountain NP - Bear Lake</strong> - June 25</span>
+                <span>June 24 at 5pm (day before)</span>
+            </div>
+            <div class="reservation-item">
+                <span><strong>Monument Valley Guided Tour</strong> - June 19</span>
+                <span>May 2026 (1 month ahead)</span>
+            </div>
+            <div class="reservation-item">
+                <span><strong>Maroon Bells Shuttle (Aspen)</strong> - June 23</span>
+                <span>1-2 weeks ahead</span>
+            </div>
+        </div>
+        
+        <h2 class="section-title" style="margin-top: 60px;">🎒 Packing List</h2>
+        <div class="packing-section">
+            <div class="packing-category">
+                <h3>👕 Clothing</h3>
+                <ul>
+                    <li>Moisture-wicking t-shirts (7)</li>
+                    <li>Lightweight long-sleeve shirts (2)</li>
+                    <li>Hiking pants/shorts (4)</li>
+                    <li>Fleece jacket (Colorado evenings)</li>
+                    <li>Light rain jacket</li>
+                    <li>Comfortable walking shoes</li>
+                    <li>Sturdy hiking boots</li>
+                    <li>Sandals/flip flops</li>
+                    <li>Swimsuits (2 per person)</li>
+                    <li>Wide-brim sun hat</li>
+                    <li>Warm hat (mountain mornings)</li>
+                    <li>Sunglasses</li>
+                </ul>
+            </div>
+            
+            <div class="packing-category">
+                <h3>🧴 Sun & Health</h3>
+                <ul>
+                    <li>Sunscreen SPF 50+ (multiple bottles)</li>
+                    <li>Lip balm with SPF</li>
+                    <li>Aloe vera gel</li>
+                    <li>Insect repellent</li>
+                    <li>First aid kit</li>
+                    <li>Prescription medications</li>
+                    <li>Motion sickness medicine</li>
+                    <li>Pain relievers (ibuprofen)</li>
+                    <li>Antihistamines</li>
+                    <li>Band-aids & moleskin</li>
+                </ul>
+            </div>
+            
+            <div class="packing-category">
+                <h3>🥾 Hiking Gear</h3>
+                <ul>
+                    <li>Daypack/backpack</li>
+                    <li>Hydration pack or water bottles (3L+)</li>
+                    <li>Hiking poles (optional)</li>
+                    <li>Trail snacks (granola bars, nuts)</li>
+                    <li>Headlamp/flashlight (Delicate Arch!)</li>
+                    <li>Whistle</li>
+                    <li>Trail maps (downloaded offline)</li>
+                </ul>
+            </div>
+            
+            <div class="packing-category">
+                <h3>📱 Electronics</h3>
+                <ul>
+                    <li>Phone chargers</li>
+                    <li>Portable battery pack (2000mAh+)</li>
+                    <li>Car phone mount</li>
+                    <li>Camera + extra batteries</li>
+                    <li>Memory cards</li>
+                    <li>Tablet/iPad for kid</li>
+                    <li>Headphones</li>
+                    <li>Car charger adapter</li>
+                </ul>
+            </div>
+            
+            <div class="packing-category">
+                <h3>🚗 Road Trip Essentials</h3>
+                <ul>
+                    <li>Cooler for snacks/drinks</li>
+                    <li>Reusable water bottles</li>
+                    <li>Paper towels/napkins</li>
+                    <li>Trash bags</li>
+                    <li>Wet wipes</li>
+                    <li>Blanket for picnics</li>
+                    <li>Pillows for car naps</li>
+                    <li>Entertainment (games, books)</li>
+                    <li>Binoculars (wildlife!)</li>
+                </ul>
+            </div>
+            
+            <div class="packing-category">
+                <h3>📄 Documents</h3>
+                <ul>
+                    <li>Driver's license</li>
+                    <li>Car rental confirmation</li>
+                    <li>Hotel confirmations (printed)</li>
+                    <li>Park reservations (Arches, RMNP)</li>
+                    <li>Insurance cards</li>
+                    <li>Credit cards</li>
+                    <li>Emergency contacts list</li>
+                    <li>Printed itinerary backup</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="tips-box">
+            <h3>💡 Pro Tips for June 13-26, 2026</h3>
+            <ul>
+                <li><strong>Start early:</strong> Hit parks by 7-8am to beat crowds and heat (especially Arches, Grand Canyon in mid-June)</li>
+                <li><strong>June weather:</strong> Desert parks will be HOT (90-100°F). Colorado will be pleasant (70-80°F days, 40-50°F nights)</li>
+                <li><strong>Hydration:</strong> Desert air = dehydration. Drink 1 gallon per person per day when hiking</li>
+                <li><strong>Junior Ranger programs:</strong> Free at every national park - your kid can earn 6 badges this trip!</li>
+                <li><strong>Download offline maps:</strong> Cell service is spotty - download Google Maps offline for Utah and Arizona</li>
+                <li><strong>Gas up:</strong> Fill tank at half - gas stations are sparse between Monument Valley and Moab</li>
+                <li><strong>Altitude:</strong> Aspen (8,000 ft) & Rocky Mountain (12,000+ ft) - take it easy, stay hydrated, watch for altitude sickness</li>
+                <li><strong>Monument Valley:</strong> No alcohol sold on Navajo land - plan accordingly</li>
+                <li><strong>Book The View Hotel NOW:</strong> It sells out 6+ months ahead for summer weekends</li>
+                <li><strong>Delicate Arch:</strong> Start the hike by 6pm for sunset - bring headlamps for the walk back in the dark</li>
+            </ul>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Summer 2026 Family Adventure • June 13-26</p>
+        <p style="margin-top: 5px;">Las Vegas → Zion → Bryce → Grand Canyon → Monument Valley → Arches → Aspen → Rocky Mountain → Denver</p>
+        <p style="margin-top: 15px; font-size: 0.9rem;">Created with ❤️ for your family</p>
+    </footer>
+    
+    <script>
+        // Initialize the map
+        const map = L.map('map').setView([37.5, -110], 6);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // Destinations with coordinates and dates
+        const destinations = [
+            { name: "Las Vegas", lat: 36.1699, lng: -115.1398, day: "Day 1 • Sat, Jun 13", color: "#A8432D" },
+            { name: "Zion National Park", lat: 37.2982, lng: -113.0263, day: "Days 2-3 • Jun 14-15", color: "#C2724F" },
+            { name: "Bryce Canyon", lat: 37.5930, lng: -112.1871, day: "Day 4 • Tue, Jun 16", color: "#7A8B6F" },
+            { name: "Grand Canyon", lat: 36.0544, lng: -112.1401, day: "Days 5-6 • Jun 17-18", color: "#A8432D" },
+            { name: "Monument Valley", lat: 36.9980, lng: -110.0985, day: "Day 7 • Fri, Jun 19", color: "#C2724F" },
+            { name: "Moab / Arches", lat: 38.5733, lng: -109.5498, day: "Days 8-9 • Jun 20-21", color: "#7A8B6F" },
+            { name: "Aspen", lat: 39.1911, lng: -106.8175, day: "Days 10-11 • Jun 22-23", color: "#A8432D" },
+            { name: "Rocky Mountain NP", lat: 40.3428, lng: -105.6836, day: "Days 12-13 • Jun 24-25", color: "#C2724F" },
+            { name: "Denver Airport", lat: 39.8561, lng: -104.6737, day: "Day 14 • Fri, Jun 26", color: "#1E2328" }
+        ];
+        
+        // Add markers
+        destinations.forEach((dest, index) => {
+            const marker = L.circleMarker([dest.lat, dest.lng], {
+                radius: 12,
+                fillColor: dest.color,
+                color: '#fff',
+                weight: 3,
+                opacity: 1,
+                fillOpacity: 0.9
+            }).addTo(map);
+            
+            marker.bindPopup(`
+                <div style="text-align: center; font-family: 'Source Sans 3', sans-serif; min-width: 150px;">
+                    <strong style="font-size: 1.1em; color: ${dest.color};">${dest.name}</strong><br>
+                    <span style="color: #666; font-size: 0.9em;">${dest.day}</span>
+                </div>
+            `);
+            
+            // Add number label
+            const numberIcon = L.divIcon({
+                className: 'number-icon',
+                html: `<div style="
+                    background: ${dest.color};
+                    color: white;
+                    width: 26px;
+                    height: 26px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                    font-size: 12px;
+                    border: 2px solid white;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                ">${index + 1}</div>`,
+                iconSize: [26, 26],
+                iconAnchor: [13, 13]
+            });
+            L.marker([dest.lat, dest.lng], { icon: numberIcon }).addTo(map);
+        });
+        
+        // Draw route line
+        const routeCoords = destinations.map(d => [d.lat, d.lng]);
+        L.polyline(routeCoords, {
+            color: '#A8432D',
+            weight: 3,
+            opacity: 0.7,
+            dashArray: '10, 10'
+        }).addTo(map);
+        
+        // Fit bounds to show all markers
+        const bounds = L.latLngBounds(routeCoords);
+        map.fitBounds(bounds, { padding: [50, 50] });
+    </script>
+</body>
+</html>
